@@ -22,7 +22,6 @@ import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.exception.NoSuchAttributeException;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
-
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -59,6 +58,7 @@ public class TemplateBuilder {
         }
         return mapped;
     }
+
 
     public String build(Event event) {
         return messageFormat.format(event.getData());

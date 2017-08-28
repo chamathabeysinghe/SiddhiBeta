@@ -24,10 +24,13 @@ import org.wso2.siddhi.core.util.config.ConfigReader;
 import org.wso2.siddhi.core.util.transport.DynamicOptions;
 import org.wso2.siddhi.core.util.transport.OptionHolder;
 import org.wso2.siddhi.core.util.transport.TemplateBuilder;
+import org.wso2.siddhi.query.api.annotation.Element;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Abstract parent class to represent event mappers. Events mappers will receive {@link Event}s and can convert them
@@ -39,6 +42,7 @@ public abstract class SinkMapper {
     private SinkListener sinkListener;
     private OptionHolder optionHolder;
     private TemplateBuilder payloadTemplateBuilder = null;
+    private HashMap<String, TemplateBuilder> templateBuilderHashMap = null;
     private OutputGroupDeterminer groupDeterminer = null;
     private ThreadLocal<DynamicOptions> trpDynamicOptions = new ThreadLocal<>();
 
@@ -55,6 +59,32 @@ public abstract class SinkMapper {
         if (unmappedPayload != null && !unmappedPayload.isEmpty()) {
             payloadTemplateBuilder = new TemplateBuilder(streamDefinition, unmappedPayload);
         }
+
+        init(streamDefinition, mapOptionHolder, payloadTemplateBuilder, mapperConfigReader, siddhiAppContext);
+    }
+
+    public final void init(StreamDefinition streamDefinition,
+                           String type,
+                           OptionHolder mapOptionHolder,
+                           List<Element> unmappedPayload,
+                           Sink sink, ConfigReader mapperConfigReader,
+                           SiddhiAppContext siddhiAppContext) {
+        sink.setTrpDynamicOptions(trpDynamicOptions);
+        this.sinkListener = sink;
+        this.optionHolder = mapOptionHolder;
+        this.type = type;
+        if (unmappedPayload != null && !unmappedPayload.isEmpty()) {
+            templateBuilderHashMap = new HashMap<>();
+            for (Element e : unmappedPayload) {
+                TemplateBuilder templateBuilder = new TemplateBuilder(streamDefinition, e.getValue());
+                templateBuilderHashMap.put(e.getKey(), templateBuilder);
+            }
+            if (templateBuilderHashMap.get(null) != null) {
+                payloadTemplateBuilder = templateBuilderHashMap.get(null);
+                templateBuilderHashMap = null;
+            }
+        }
+
 
         init(streamDefinition, mapOptionHolder, payloadTemplateBuilder, mapperConfigReader, siddhiAppContext);
     }
@@ -106,8 +136,16 @@ public abstract class SinkMapper {
                 }
                 for (ArrayList<Event> eventList : eventMap.values()) {
                     trpDynamicOptions.set(new DynamicOptions(eventList.get(0)));
-                    mapAndSend(eventList.toArray(new Event[eventList.size()]), optionHolder, payloadTemplateBuilder,
-                            sinkListener);
+
+                    if (templateBuilderHashMap != null) {
+                        mapAndSend(eventList.toArray(new Event[eventList.size()]), optionHolder, templateBuilderHashMap,
+                                sinkListener);
+                    } else {
+                        mapAndSend(eventList.toArray(new Event[eventList.size()]), optionHolder, payloadTemplateBuilder,
+                                sinkListener);
+                    }
+
+
                     trpDynamicOptions.remove();
                 }
             } else {
@@ -128,7 +166,14 @@ public abstract class SinkMapper {
     final void mapAndSend(Event event) {
         try {
             trpDynamicOptions.set(new DynamicOptions(event));
-            mapAndSend(event, optionHolder, payloadTemplateBuilder, sinkListener);
+
+            if (templateBuilderHashMap != null) {
+                mapAndSend(event, optionHolder, templateBuilderHashMap, sinkListener);
+            } else {
+                mapAndSend(event, optionHolder, payloadTemplateBuilder, sinkListener);
+
+            }
+
         } finally {
             trpDynamicOptions.remove();
 
@@ -146,6 +191,11 @@ public abstract class SinkMapper {
     public abstract void mapAndSend(Event[] events, OptionHolder optionHolder, TemplateBuilder payloadTemplateBuilder,
                                     SinkListener sinkListener);
 
+    public void mapAndSend(Event[] events, OptionHolder optionHolder, HashMap<String, TemplateBuilder>
+            payloadTemplateBuilderMap, SinkListener sinkListener) {
+
+    }
+
     /**
      * Called to map the event and send it to {@link SinkListener} for publishing
      *
@@ -156,6 +206,11 @@ public abstract class SinkMapper {
      */
     public abstract void mapAndSend(Event event, OptionHolder optionHolder, TemplateBuilder payloadTemplateBuilder,
                                     SinkListener sinkListener);
+
+    public void mapAndSend(Event event, OptionHolder optionHolder, HashMap<String,
+            TemplateBuilder> payloadTemplateBuilderMap, SinkListener sinkListener) {
+
+    }
 
     public final String getType() {
         return this.type;

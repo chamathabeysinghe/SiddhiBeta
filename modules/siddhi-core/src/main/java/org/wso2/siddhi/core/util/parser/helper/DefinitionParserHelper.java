@@ -483,7 +483,7 @@ public class DefinitionParserHelper {
                         OptionHolder mapOptionHolder = constructOptionProcessor(streamDefinition, mapAnnotation,
                                 sinkMapper.getClass().getAnnotation(org.wso2.siddhi.annotation.Extension.class),
                                 sinkMapper.getSupportedDynamicOptions());
-                        String payload = getPayload(mapAnnotation);
+                        List<Element> payload = getPayload(mapAnnotation);
 
                         OptionHolder distributionOptHolder = null;
                         if (isDistributedTransport) {
@@ -693,15 +693,12 @@ public class DefinitionParserHelper {
         }
     }
 
-    private static String getPayload(Annotation mapAnnotation) {
+    private static List<Element> getPayload(Annotation mapAnnotation) {
         List<Annotation> attributeAnnotations = mapAnnotation.getAnnotations(SiddhiConstants.ANNOTATION_PAYLOAD);
         if (attributeAnnotations.size() == 1) {
             List<Element> elements = attributeAnnotations.get(0).getElements();
-            if (elements.size() == 1) {
-                return elements.get(0).getValue();
-            } else {
-                throw new SiddhiAppCreationException("@payload() annotation should only contain single element.");
-            }
+            return elements;
+
         } else if (attributeAnnotations.size() > 1) {
             throw new SiddhiAppCreationException("@map() annotation should only contain single @payload() " +
                     "annotation.");

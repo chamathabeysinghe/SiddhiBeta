@@ -27,6 +27,7 @@ import org.wso2.siddhi.core.util.config.ConfigReader;
 import org.wso2.siddhi.core.util.transport.DynamicOptions;
 import org.wso2.siddhi.core.util.transport.OptionHolder;
 import org.wso2.siddhi.query.api.annotation.Annotation;
+import org.wso2.siddhi.query.api.annotation.Element;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
 
 import java.util.List;
@@ -91,6 +92,21 @@ public abstract class DistributedTransport extends Sink {
                 payloadTemplate, mapperConfigReader, siddhiAppContext);
         initTransport(sinkOptionHolder, destinationOptionHolders, sinkAnnotation, sinkConfigReader,
                       siddhiAppContext);
+    }
+
+    public void init(StreamDefinition streamDefinition, String type, OptionHolder transportOptionHolder,
+                     ConfigReader sinkConfigReader,
+                     SinkMapper sinkMapper, String mapType, OptionHolder mapOptionHolder, List<Element> payloadTemplate
+            ,
+                     ConfigReader mapperConfigReader, SiddhiAppContext siddhiAppContext, List<OptionHolder>
+                             destinationOptionHolders, Annotation sinkAnnotation, DistributionStrategy strategy,
+                     String[] supportedDynamicOptions) {
+        this.strategy = strategy;
+        this.supportedDynamicOptions = supportedDynamicOptions;
+        init(streamDefinition, type, transportOptionHolder, sinkConfigReader, sinkMapper, mapType, mapOptionHolder,
+                payloadTemplate, mapperConfigReader, siddhiAppContext);
+        initTransport(sinkOptionHolder, destinationOptionHolders, sinkAnnotation, sinkConfigReader,
+                siddhiAppContext);
     }
 
     @Override
