@@ -54,23 +54,6 @@ public abstract class Sink implements SinkListener, Snapshotable {
 
     public final void init(StreamDefinition streamDefinition, String type, OptionHolder transportOptionHolder,
                            ConfigReader sinkConfigReader, SinkMapper sinkMapper, String mapType,
-                           OptionHolder mapOptionHolder, String payload, ConfigReader mapperConfigReader,
-                           SiddhiAppContext siddhiAppContext) {
-        this.streamDefinition = streamDefinition;
-        this.type = type;
-        this.elementId = siddhiAppContext.getElementIdGenerator().createNewId();
-        init(streamDefinition, transportOptionHolder, sinkConfigReader, siddhiAppContext);
-        if (sinkMapper != null) {
-            sinkMapper.init(streamDefinition, mapType, mapOptionHolder, payload, this,
-                    mapperConfigReader, siddhiAppContext);
-            this.mapper = sinkMapper;
-        }
-        scheduledExecutorService = siddhiAppContext.getScheduledExecutorService();
-
-    }
-
-    public final void init(StreamDefinition streamDefinition, String type, OptionHolder transportOptionHolder,
-                           ConfigReader sinkConfigReader, SinkMapper sinkMapper, String mapType,
                            OptionHolder mapOptionHolder, List<Element> payload, ConfigReader mapperConfigReader,
                            SiddhiAppContext siddhiAppContext) {
         this.streamDefinition = streamDefinition;

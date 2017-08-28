@@ -49,23 +49,6 @@ public abstract class SinkMapper {
     public final void init(StreamDefinition streamDefinition,
                            String type,
                            OptionHolder mapOptionHolder,
-                           String unmappedPayload,
-                           Sink sink, ConfigReader mapperConfigReader,
-                           SiddhiAppContext siddhiAppContext) {
-        sink.setTrpDynamicOptions(trpDynamicOptions);
-        this.sinkListener = sink;
-        this.optionHolder = mapOptionHolder;
-        this.type = type;
-        if (unmappedPayload != null && !unmappedPayload.isEmpty()) {
-            payloadTemplateBuilder = new TemplateBuilder(streamDefinition, unmappedPayload);
-        }
-
-        init(streamDefinition, mapOptionHolder, payloadTemplateBuilder, mapperConfigReader, siddhiAppContext);
-    }
-
-    public final void init(StreamDefinition streamDefinition,
-                           String type,
-                           OptionHolder mapOptionHolder,
                            List<Element> unmappedPayload,
                            Sink sink, ConfigReader mapperConfigReader,
                            SiddhiAppContext siddhiAppContext) {
