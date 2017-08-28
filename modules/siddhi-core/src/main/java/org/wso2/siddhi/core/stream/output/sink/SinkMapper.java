@@ -177,6 +177,8 @@ public abstract class SinkMapper {
     public void mapAndSend(Event[] events, OptionHolder optionHolder, HashMap<String, TemplateBuilder>
             payloadTemplateBuilderMap, SinkListener sinkListener) {
 
+        throw new RuntimeException("Sink @payload() annotation is not supporting multiple elements");
+
     }
 
     /**
@@ -192,7 +194,7 @@ public abstract class SinkMapper {
 
     public void mapAndSend(Event event, OptionHolder optionHolder, HashMap<String,
             TemplateBuilder> payloadTemplateBuilderMap, SinkListener sinkListener) {
-
+        throw new RuntimeException("Sink @payload() annotation is not supporting multiple elements");
     }
 
     public final String getType() {
