@@ -21,7 +21,9 @@ package org.wso2.siddhi.core.util.transport;
 import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.exception.NoSuchAttributeException;
+import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
+
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,21 +38,23 @@ import java.util.regex.Pattern;
 public class TemplateBuilder {
     private static final Pattern DYNAMIC_PATTERN = Pattern.compile("(\\{\\{[^{}]*}})|[{}]");
     private MessageFormat messageFormat;
+    private boolean isObjectMessage = false;
+    private int objectIndex = -1;
 
     public TemplateBuilder(StreamDefinition streamDefinition, String template) {
-        this.messageFormat = parse(streamDefinition, template);
+        parse(streamDefinition, template);
     }
 
-    public static Map<String, String> convert(Event event, Map<String, TemplateBuilder> converterMap) {
-        Map<String, String> mapped = new HashMap<String, String>();
+    public static Map<String, Object> convert(Event event, Map<String, TemplateBuilder> converterMap) {
+        Map<String, Object> mapped = new HashMap<>();
         for (Map.Entry<String, TemplateBuilder> entry : converterMap.entrySet()) {
             mapped.put(entry.getKey(), entry.getValue().build(event));
         }
         return mapped;
     }
 
-    public static String[] convert(Event event, TemplateBuilder[] templateBuilders) {
-        String[] mapped = new String[templateBuilders.length];
+    public static Object[] convert(Event event, TemplateBuilder[] templateBuilders) {
+        Object[] mapped = new String[templateBuilders.length];
         int i = 0;
         for (TemplateBuilder templateBuilder : templateBuilders) {
             mapped[i] = templateBuilder.build(event);
@@ -60,15 +64,57 @@ public class TemplateBuilder {
     }
 
 
-    public String build(Event event) {
-        return messageFormat.format(event.getData());
+    public Object build(Event event) {
+        if (isObjectMessage) {
+            return event.getData()[objectIndex];
+        } else {
+            return messageFormat.format(event.getData());
+        }
+
     }
 
-    public String build(ComplexEvent complexEvent) {
-        return messageFormat.format(complexEvent.getOutputData());
+    public Object build(ComplexEvent complexEvent) {
+        if (isObjectMessage) {
+            return complexEvent.getOutputData()[objectIndex];
+        } else {
+            return messageFormat.format(complexEvent.getOutputData());
+        }
+
     }
 
-    private MessageFormat parse(StreamDefinition streamDefinition, String template) {
+    private void parse(StreamDefinition streamDefinition, String template) {
+
+        //check if this pattern matches if so raise an error
+        //^.+{{{\s*[a-zA-Z_][a-zA-Z_0-9]*\s*}}}.*|.*{{{\s*[a-zA-Z_][a-zA-Z_0-9]*\s*}}}.+$
+        //
+
+        if (template.matches("\\{\\{\\{\\s*[a-zA-Z_][a-zA-Z_0-9]*\\s*\\}\\}\\}")) {
+
+            if (template.matches("^\\{\\{\\{\\s*[a-zA-Z_][a-zA-Z_0-9]*\\s*\\}\\}\\}$")) {
+                this.objectIndex = parseObjectMessage(streamDefinition, template);
+                this.isObjectMessage = true;
+            } else {
+                throw new SiddhiAppCreationException(String.format("Payload : The payload string %s in %s has " +
+                        "more than one object references or it contains text.", template, streamDefinition));
+            }
+
+        } else {
+            this.messageFormat = parseTextMessage(streamDefinition, template);
+        }
+    }
+
+    private int parseObjectMessage(StreamDefinition streamDefinition, String template) {
+        String attributeReference = template.replaceAll("\\{\\{\\{|}}}", "");
+        List<String> attributes = Arrays.asList(streamDefinition.getAttributeNameArray());
+        int index = attributes.indexOf(attributeReference);
+        if (index == -1) {
+            throw new NoSuchAttributeException(String.format("Attribute : %s does not exist in %s.",
+                    attributeReference, streamDefinition));
+        }
+        return index;
+    }
+
+    private MessageFormat parseTextMessage(StreamDefinition streamDefinition, String template) {
         // note: currently we do not support arbitrary data to be mapped with dynamic options
         List<String> attributes = Arrays.asList(streamDefinition.getAttributeNameArray());
         StringBuffer result = new StringBuffer();
@@ -80,7 +126,7 @@ public class TemplateBuilder {
                     m.appendReplacement(result, String.format("{%s}", attrIndex));
                 } else {
                     throw new NoSuchAttributeException(String.format("Attribute : %s does not exist in %s.",
-                                                                     m.group(1), streamDefinition));
+                            m.group(1), streamDefinition));
                 }
             } else {
                 m.appendReplacement(result, "'" + m.group() + "'");
