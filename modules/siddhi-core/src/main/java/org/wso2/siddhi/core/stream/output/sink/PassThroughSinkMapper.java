@@ -27,7 +27,7 @@ import org.wso2.siddhi.core.util.transport.OptionHolder;
 import org.wso2.siddhi.core.util.transport.TemplateBuilder;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
 
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implementation of {@link SinkMapper} representing pass-through scenario where no mapping is done and
@@ -52,7 +52,7 @@ public class PassThroughSinkMapper extends SinkMapper {
     }
 
     @Override
-    public void init(StreamDefinition streamDefinition, OptionHolder optionHolder, HashMap<String, TemplateBuilder>
+    public void init(StreamDefinition streamDefinition, OptionHolder optionHolder, Map<String, TemplateBuilder>
             payloadTemplateBuilder, ConfigReader mapperConfigReader, SiddhiAppContext siddhiAppContext) {
         // do nothing
     }
@@ -64,13 +64,13 @@ public class PassThroughSinkMapper extends SinkMapper {
 
     @Override
     public void mapAndSend(Event[] events, OptionHolder optionHolder,
-                           HashMap<String, TemplateBuilder> payloadTemplateBuilder, SinkListener sinkListener) {
+                           Map<String, TemplateBuilder> payloadTemplateBuilder, SinkListener sinkListener) {
         sinkListener.publish(events);
     }
 
     @Override
     public void mapAndSend(Event event, OptionHolder optionHolder,
-                           HashMap<String, TemplateBuilder> payloadTemplateBuilder, SinkListener sinkListener) {
+                           Map<String, TemplateBuilder> payloadTemplateBuilder, SinkListener sinkListener) {
         sinkListener.publish(event);
     }
 }
