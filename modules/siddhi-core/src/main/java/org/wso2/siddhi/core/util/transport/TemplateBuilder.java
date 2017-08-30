@@ -21,7 +21,6 @@ package org.wso2.siddhi.core.util.transport;
 import org.wso2.siddhi.core.event.ComplexEvent;
 import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.exception.NoSuchAttributeException;
-import org.wso2.siddhi.core.exception.SiddhiAppCreationException;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
 
 import java.text.MessageFormat;
@@ -84,34 +83,22 @@ public class TemplateBuilder {
 
     private void parse(StreamDefinition streamDefinition, String template) {
 
-        //check if this pattern matches if so raise an error
-        //^.+{{{\s*[a-zA-Z_][a-zA-Z_0-9]*\s*}}}.*|.*{{{\s*[a-zA-Z_][a-zA-Z_0-9]*\s*}}}.+$
-        //
-
-        if (template.matches("\\{\\{\\{\\s*[a-zA-Z_][a-zA-Z_0-9]*\\s*\\}\\}\\}")) {
-
-            if (template.matches("^\\{\\{\\{\\s*[a-zA-Z_][a-zA-Z_0-9]*\\s*\\}\\}\\}$")) {
-                this.objectIndex = parseObjectMessage(streamDefinition, template);
-                this.isObjectMessage = true;
-            } else {
-                throw new SiddhiAppCreationException(String.format("Payload : The payload string %s in %s has " +
-                        "more than one object references or it contains text.", template, streamDefinition));
-            }
-
+        if (Arrays.asList(streamDefinition.getAttributeNameArray()).contains(template.trim())) {
+            this.objectIndex = parseObjectMessage(streamDefinition, template);
+            this.isObjectMessage = true;
         } else {
+            //str ="`{{variable}}`"  ??????
+            if (template.matches("^`[^\\s]*`$")) {
+                template = template.replaceAll("^`|`$", "");
+            }
             this.messageFormat = parseTextMessage(streamDefinition, template);
         }
     }
 
     private int parseObjectMessage(StreamDefinition streamDefinition, String template) {
-        String attributeReference = template.replaceAll("\\{\\{\\{|}}}", "");
+        String attributeReference = template.trim();
         List<String> attributes = Arrays.asList(streamDefinition.getAttributeNameArray());
-        int index = attributes.indexOf(attributeReference);
-        if (index == -1) {
-            throw new NoSuchAttributeException(String.format("Attribute : %s does not exist in %s.",
-                    attributeReference, streamDefinition));
-        }
-        return index;
+        return attributes.indexOf(attributeReference);
     }
 
     private MessageFormat parseTextMessage(StreamDefinition streamDefinition, String template) {
@@ -126,7 +113,7 @@ public class TemplateBuilder {
                     m.appendReplacement(result, String.format("{%s}", attrIndex));
                 } else {
                     throw new NoSuchAttributeException(String.format("Attribute : %s does not exist in %s.",
-                            m.group(1), streamDefinition));
+                                                                     m.group(1), streamDefinition));
                 }
             } else {
                 m.appendReplacement(result, "'" + m.group() + "'");

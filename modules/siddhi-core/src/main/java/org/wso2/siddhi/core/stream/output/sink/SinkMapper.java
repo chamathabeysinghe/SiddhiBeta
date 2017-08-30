@@ -41,7 +41,6 @@ public abstract class SinkMapper {
     private String type;
     private SinkListener sinkListener;
     private OptionHolder optionHolder;
-    private TemplateBuilder payloadTemplateBuilder = null;
     private HashMap<String, TemplateBuilder> templateBuilderHashMap = null;
     private OutputGroupDeterminer groupDeterminer = null;
     private ThreadLocal<DynamicOptions> trpDynamicOptions = new ThreadLocal<>();
@@ -62,14 +61,10 @@ public abstract class SinkMapper {
                 TemplateBuilder templateBuilder = new TemplateBuilder(streamDefinition, e.getValue());
                 templateBuilderHashMap.put(e.getKey(), templateBuilder);
             }
-            if (templateBuilderHashMap.get(null) != null) {
-                payloadTemplateBuilder = templateBuilderHashMap.get(null);
-                templateBuilderHashMap = null;
-            }
         }
 
 
-        init(streamDefinition, mapOptionHolder, payloadTemplateBuilder, mapperConfigReader, siddhiAppContext);
+        init(streamDefinition, mapOptionHolder, templateBuilderHashMap, mapperConfigReader, siddhiAppContext);
     }
 
     /**
@@ -83,15 +78,15 @@ public abstract class SinkMapper {
     /**
      * Initialize the mapper and the mapping configurations.
      *
-     * @param streamDefinition       The stream definition
-     * @param optionHolder           Option holder containing static and dynamic options related to the mapper
-     * @param payloadTemplateBuilder Un mapped payload for reference
-     * @param mapperConfigReader     System configuration reader for Sink-mapper.
-     * @param siddhiAppContext       Siddhi Application Context
+     * @param streamDefinition          The stream definition
+     * @param optionHolder              Option holder containing static and dynamic options related to the mapper
+     * @param payloadTemplateBuilderMap Un mapped payload for reference
+     * @param mapperConfigReader        System configuration reader for Sink-mapper.
+     * @param siddhiAppContext          Siddhi Application Context
      */
     public abstract void init(StreamDefinition streamDefinition,
                               OptionHolder optionHolder,
-                              TemplateBuilder payloadTemplateBuilder,
+                              HashMap<String, TemplateBuilder> payloadTemplateBuilderMap,
                               ConfigReader mapperConfigReader,
                               SiddhiAppContext siddhiAppContext);
 
@@ -119,21 +114,13 @@ public abstract class SinkMapper {
                 }
                 for (ArrayList<Event> eventList : eventMap.values()) {
                     trpDynamicOptions.set(new DynamicOptions(eventList.get(0)));
-
-                    if (templateBuilderHashMap != null) {
-                        mapAndSend(eventList.toArray(new Event[eventList.size()]), optionHolder, templateBuilderHashMap,
-                                sinkListener);
-                    } else {
-                        mapAndSend(eventList.toArray(new Event[eventList.size()]), optionHolder, payloadTemplateBuilder,
-                                sinkListener);
-                    }
-
-
+                    mapAndSend(eventList.toArray(new Event[eventList.size()]), optionHolder, templateBuilderHashMap,
+                            sinkListener);
                     trpDynamicOptions.remove();
                 }
             } else {
                 trpDynamicOptions.set(new DynamicOptions(events[0]));
-                mapAndSend(events, optionHolder, payloadTemplateBuilder, sinkListener);
+                mapAndSend(events, optionHolder, templateBuilderHashMap, sinkListener);
                 trpDynamicOptions.remove();
             }
         } finally {
@@ -149,14 +136,7 @@ public abstract class SinkMapper {
     final void mapAndSend(Event event) {
         try {
             trpDynamicOptions.set(new DynamicOptions(event));
-
-            if (templateBuilderHashMap != null) {
-                mapAndSend(event, optionHolder, templateBuilderHashMap, sinkListener);
-            } else {
-                mapAndSend(event, optionHolder, payloadTemplateBuilder, sinkListener);
-
-            }
-
+            mapAndSend(event, optionHolder, templateBuilderHashMap, sinkListener);
         } finally {
             trpDynamicOptions.remove();
 
@@ -166,36 +146,24 @@ public abstract class SinkMapper {
     /**
      * Called to map the events and send them to {@link SinkListener} for publishing
      *
-     * @param events                 {@link Event}s that need to be mapped
-     * @param optionHolder           Option holder containing static and dynamic options related to the mapper
-     * @param payloadTemplateBuilder To build the message payload based on the given template
-     * @param sinkListener           {@link SinkListener} that will be called with the mapped events
+     * @param events                    {@link Event}s that need to be mapped
+     * @param optionHolder              Option holder containing static and dynamic options related to the mapper
+     * @param payloadTemplateBuilderMap build the message payload based on the given template
+     * @param sinkListener              {@link SinkListener} that will be called with the mapped events
      */
-    public abstract void mapAndSend(Event[] events, OptionHolder optionHolder, TemplateBuilder payloadTemplateBuilder,
-                                    SinkListener sinkListener);
-
-    public void mapAndSend(Event[] events, OptionHolder optionHolder, HashMap<String, TemplateBuilder>
-            payloadTemplateBuilderMap, SinkListener sinkListener) {
-
-        throw new RuntimeException("Sink @payload() annotation is not supporting multiple elements");
-
-    }
+    public abstract void mapAndSend(Event[] events, OptionHolder optionHolder, HashMap<String, TemplateBuilder>
+            payloadTemplateBuilderMap, SinkListener sinkListener);
 
     /**
      * Called to map the event and send it to {@link SinkListener} for publishing
      *
-     * @param event                  {@link Event} that need to be mapped
-     * @param optionHolder           Option holder containing static and dynamic options related to the mapper
-     * @param payloadTemplateBuilder To build the message payload based on the given template
-     * @param sinkListener           {@link SinkListener} that will be called with the mapped event
+     * @param event                     {@link Event} that need to be mapped
+     * @param optionHolder              Option holder containing static and dynamic options related to the mapper
+     * @param payloadTemplateBuilderMap To build the message payload based on the given template
+     * @param sinkListener              {@link SinkListener} that will be called with the mapped event
      */
-    public abstract void mapAndSend(Event event, OptionHolder optionHolder, TemplateBuilder payloadTemplateBuilder,
-                                    SinkListener sinkListener);
-
-    public void mapAndSend(Event event, OptionHolder optionHolder, HashMap<String,
-            TemplateBuilder> payloadTemplateBuilderMap, SinkListener sinkListener) {
-        throw new RuntimeException("Sink @payload() annotation is not supporting multiple elements");
-    }
+    public abstract void mapAndSend(Event event, OptionHolder optionHolder, HashMap<String,
+            TemplateBuilder> payloadTemplateBuilderMap, SinkListener sinkListener);
 
     public final String getType() {
         return this.type;

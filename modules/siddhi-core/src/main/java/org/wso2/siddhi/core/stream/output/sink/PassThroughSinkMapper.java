@@ -27,6 +27,8 @@ import org.wso2.siddhi.core.util.transport.OptionHolder;
 import org.wso2.siddhi.core.util.transport.TemplateBuilder;
 import org.wso2.siddhi.query.api.definition.StreamDefinition;
 
+import java.util.HashMap;
+
 /**
  * Implementation of {@link SinkMapper} representing pass-through scenario where no mapping is done and
  * {@link Event}s are send directly to transports.
@@ -50,7 +52,7 @@ public class PassThroughSinkMapper extends SinkMapper {
     }
 
     @Override
-    public void init(StreamDefinition streamDefinition, OptionHolder optionHolder, TemplateBuilder
+    public void init(StreamDefinition streamDefinition, OptionHolder optionHolder, HashMap<String, TemplateBuilder>
             payloadTemplateBuilder, ConfigReader mapperConfigReader, SiddhiAppContext siddhiAppContext) {
         // do nothing
     }
@@ -61,14 +63,14 @@ public class PassThroughSinkMapper extends SinkMapper {
     }
 
     @Override
-    public void mapAndSend(Event[] events, OptionHolder optionHolder, TemplateBuilder payloadTemplateBuilder,
-                           SinkListener sinkListener) {
+    public void mapAndSend(Event[] events, OptionHolder optionHolder,
+                           HashMap<String, TemplateBuilder> payloadTemplateBuilder, SinkListener sinkListener) {
         sinkListener.publish(events);
     }
 
     @Override
-    public void mapAndSend(Event event, OptionHolder optionHolder, TemplateBuilder payloadTemplateBuilder,
-                           SinkListener sinkListener) {
+    public void mapAndSend(Event event, OptionHolder optionHolder,
+                           HashMap<String, TemplateBuilder> payloadTemplateBuilder, SinkListener sinkListener) {
         sinkListener.publish(event);
     }
 }
