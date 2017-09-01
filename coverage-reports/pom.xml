@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.wso2.siddhi</groupId>
         <artifactId>siddhi</artifactId>
-        <version>4.0.0-M49-SNAPSHOT</version>
+        <version>4.0.0-M54-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -35,9 +35,9 @@
         <profile>
             <id>Test-Coverage-Report-Aggregation</id>
             <activation>
-                <property>
-                    <name>!maven.test.skip</name>
-                </property>
+                <file>
+                    <exists>../modules/siddhi-core/target/coverage-reports</exists>
+                </file>
             </activation>
             <build>
                 <plugins>
